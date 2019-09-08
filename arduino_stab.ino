@@ -3,7 +3,8 @@
 
 #include "MPU6050_6Axis_MotionApps20.h"
 
-#include <Servo.h>
+//#include <Servo.h>
+#include <Stepper.h>
 #include "pid.h"
 #include "prams.h"
 
@@ -26,9 +27,12 @@ float pitch_a = 0;
 unsigned long prev_t = 0;
 unsigned long d_t = 0;
 
-Servo roll_servo;
-Servo pitch_servo;
-Servo pitch_servo2;
+//Servo roll_servo;
+//Servo pitch_servo;
+//Servo pitch_servo2;
+
+Stepper roll_stepper(STEPS_360, 8, 9, 10, 11);
+Stepper pitch_stepper(STEPS_360, 8, 9, 10, 11);
 
 PID roll_pid;
 PID pitch_pid;
@@ -69,12 +73,14 @@ void dmpDataReady() {
   mpuInterrupt = true;
 }
 
-float roll_mef_a[8] = { -1983233334, -1983233334, -1983233334, -1983233334, 
-//-1983233334, -1983233334, -1983233334, -1983233334, 
--1983233334, -1983233334, -1983233334, -1983233334};
-float pitch_mef_a[8] = { -1983233334, -1983233334, -1983233334, -1983233334, 
-//-1983233334, -1983233334, -1983233334, -1983233334, 
--1983233334, -1983233334, -1983233334, -1983233334};
+float roll_mef_a[8] = { -1983233334, -1983233334, -1983233334, -1983233334,
+                        //-1983233334, -1983233334, -1983233334, -1983233334,
+                        -1983233334, -1983233334, -1983233334, -1983233334
+                      };
+float pitch_mef_a[8] = { -1983233334, -1983233334, -1983233334, -1983233334,
+                         //-1983233334, -1983233334, -1983233334, -1983233334,
+                         -1983233334, -1983233334, -1983233334, -1983233334
+                       };
 int ssss = 8;
 
 float med_r_f(float value)
@@ -157,14 +163,15 @@ void setup() {
 
 
   Serial.begin(115200);
-  roll_servo.attach(ROLL_PIN);
-  pitch_servo.attach(PITCH_PIN);
-  pitch_servo2.attach(PITCH_PIN2);
-
-  roll_servo.write(ROLL_S);
-  pitch_servo.write(PITCH_S);
-  pitch_servo2.write(PITCH_S2);
-
+  //  roll_servo.attach(ROLL_PIN);
+  //  pitch_servo.attach(PITCH_PIN);
+  //  pitch_servo2.attach(PITCH_PIN2);
+  //
+  //  roll_servo.write(ROLL_S);
+  //  pitch_servo.write(PITCH_S);
+  //  pitch_servo2.write(PITCH_S2);
+  roll_stepper.setSpeed(30);
+  pitch_stepper.setSpeed(30);
   // initialize device
   Serial.println(F("Initializing I2C devices..."));
   mpu.initialize();
@@ -243,6 +250,14 @@ float pitch_s_prev = 0;
 //float pitch_a_prev = 0;
 bool start = false;
 
+float roll_stepper_p_a = 0;
+float pitch_stepper_p_a = 0;
+
+void set_stepper_angle(Stepper &stepper, float angle, float &prev_angle) {
+  stepper.step(round((angle - prev_angle) / STEPS_360));
+  prev_angle = angle;
+}
+
 void loop() {
 
   if (!dmpReady) return;
@@ -286,12 +301,12 @@ void loop() {
       float pitch = ypr[1] * RAD_TO_DEG;
       roll = zeroAngle(roll, ROLL_ZERO);
       pitch = -zeroAngle(pitch, PITCH_ZERO);
-      
+
       roll = zeroAngle(roll, ROLL_ZERO2);
       pitch = zeroAngle(pitch, PITCH_ZERO2);
 
-      roll = med_r_f(roll)*ROLL_MED_F_C+roll*(1-ROLL_MED_F_C);
-      pitch = med_p_f(pitch)*PITCH_MED_F_C+pitch*(1-PITCH_MED_F_C);
+      roll = med_r_f(roll) * ROLL_MED_F_C + roll * (1 - ROLL_MED_F_C);
+      pitch = med_p_f(pitch) * PITCH_MED_F_C + pitch * (1 - PITCH_MED_F_C);
 
       unsigned long now = millis();
       d_t = now - prev_t;
@@ -327,33 +342,38 @@ void loop() {
       float roll_s_ra = roll_pid_rate.calc(roll_ra, 0);
       float pitch_s_ra = pitch_pid_rate.calc(pitch_ra, 0);
 
-      
-      
-      
-      if (abs(roll_s_prev - roll_s) > ROLL_STATE_TH){
+
+
+
+      if (abs(roll_s_prev - roll_s) > ROLL_STATE_TH) {
         roll_s /= d_t;
-        
+
         roll_a += roll_s;
       }
-      if (abs(pitch_s_prev - pitch_s) > PITCH_STATE_TH){
+      if (abs(pitch_s_prev - pitch_s) > PITCH_STATE_TH) {
         pitch_s /= d_t;
-        
+
         pitch_a += pitch_s;
       }
-      
-//      pitch_a += pitch_s;
+
+      //      pitch_a += pitch_s;
+
 
       roll_a += roll_s_ra;
       pitch_a += pitch_s_ra;
-      
+
       roll_s_prev = roll_s;
       pitch_s_prev = pitch_s;
 
+      //      roll_stepper.setSpeed(roll_s_ra);
+      //      pitch_stepper.setSpeed(pitch_s_ra);
+      set_stepper_angle(roll_stepper, roll_a, roll_stepper_p_a);
+      set_stepper_angle(pitch_stepper, pitch_a, pitch_stepper_p_a);
 
-//      roll_servo.writeMicroseconds(map(ROLL_S + roll_a, 0, 180, 500, 2400));
-      roll_servo.writeMicroseconds(map(ROLL_S + roll_a, 0, 180, 500, 2400));
-      pitch_servo.writeMicroseconds(map(PITCH_S - pitch_a, 0, 180, 500, 2400));
-      pitch_servo2.writeMicroseconds(map(PITCH_S2 + pitch_a, 0, 180, 500, 2400));
+      //      roll_servo.writeMicroseconds(map(ROLL_S + roll_a, 0, 180, 500, 2400));
+      //      roll_servo.writeMicroseconds(map(ROLL_S + roll_a, 0, 180, 500, 2400));/
+      //      pitch_servo.writeMicroseconds(map(PITCH_S - pitch_a, 0, 180, 500, 2400));/
+      //      pitch_servo2.writeMicroseconds(map(PITCH_S2 + pitch_a, 0, 180, 500, 2400));/
 
 
       //    roll_servo.write(RqOLL_S + roll_a);
@@ -372,7 +392,7 @@ void loop() {
       //    pitch_servo2.write(PITCH_S2 + pitch_a);
       //    microValue = map(angleDegrees, 0,180,1000,2000);
 
-      float p = 70;
+      float p = MAX_ANGLE;
       if (roll_a > p) {
         roll_a = p;
       }
@@ -394,9 +414,9 @@ void loop() {
 
       blinkState = !blinkState;
       digitalWrite(LED_PIN, blinkState);
-            delay(1);
+      delay(1);
       prev_t = now;
-      
+
     }
   }
 }

@@ -1,12 +1,20 @@
 //Setting
 
-#define ROLL_PIN 9
-#define PITCH_PIN 10
-#define PITCH_PIN2 11
 
+// Limit
+#define MAX_ANGLE 70
+//Stepper Settings
+#define STEPS_360 100
+
+//#define ROLL_PIN 9
+//#define PITCH_PIN 10
+//#define PITCH_PIN2 11
+
+//Sensor position
 #define ROLL_ZERO 180
 #define PITCH_ZERO 180
 
+//Sensor offset
 #define ROLL_ZERO2 3
 #define PITCH_ZERO2 -1.8
 
@@ -29,6 +37,7 @@
 //#define PITCH_I 0.0000
 //#define PITCH_D 25
 
+// PID params
 #define ROLL_P 0.73
 #define ROLL_I 0.00
 #define ROLL_D 26
@@ -49,8 +58,9 @@
 //#define ROLL_STATE_TH  0.5
 //#define PITCH_STATE_TH  0.5
 
-#define ROLL_MED_F_C  0.5
+// Filters params
+#define ROLL_MED_F_C  0.3
 #define PITCH_MED_F_C  0.3
 
-#define ROLL_STATE_TH  0.6
+#define ROLL_STATE_TH  0.5
 #define PITCH_STATE_TH  0.5

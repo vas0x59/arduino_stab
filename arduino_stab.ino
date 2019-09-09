@@ -254,7 +254,7 @@ float roll_stepper_p_a = 0;
 float pitch_stepper_p_a = 0;
 
 void set_stepper_angle(Stepper &stepper, float angle, float &prev_angle) {
-  stepper.step(round((angle - prev_angle) / STEPS_360));
+  stepper.step(round((angle - prev_angle) / 360 * STEPS_360));
   prev_angle = angle;
 }
 

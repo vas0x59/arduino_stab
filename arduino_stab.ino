@@ -5,7 +5,7 @@
 
 #include <Servo.h>
 #include "pid.h"
-#include "prams.h"
+#include "params.h"
 
 
 float zeroAngle(float angle, float zero) {
